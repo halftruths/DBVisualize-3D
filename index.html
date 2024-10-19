@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D DB Schema Visualizer</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+        #container {
+            display: flex;
+            height: 100%;
+        }
+        #left-panel {
+            width: 30%;
+            min-width: 300px;
+            padding: 20px;
+            box-sizing: border-box;
+            background-color: #f0f0f0;
+            overflow-y: auto;
+        }
+        #right-panel {
+            flex-grow: 1;
+            position: relative;
+        }
+        #resizer {
+            width: 5px;
+            background-color: #ccc;
+            cursor: col-resize;
+        }
+        textarea {
+            width: 100%;
+            resize: none; /* Disable resizing from the corner */
+        }
+        button {
+            margin-right: 10px;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .tab-btn {
+            padding: 5px 10px;
+            cursor: pointer;
+            background-color: #e0e0e0;
+            border: none;
+            outline: none;
+        }
+        .tab-btn.active {
+            background-color: #fff;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="left-panel">
+            <h2>DB Schema Input</h2>
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="json">JSON</button>
+                <button class="tab-btn" data-tab="sql">SQL</button>
+            </div>
+            <div class="tab-content active" id="json-tab">
+                <textarea id="schema-input"></textarea>
+            </div>
+            <div class="tab-content" id="sql-tab">
+                <textarea id="sql-input"></textarea>
+            </div>
+            <button id="visualize-btn">Visualize</button>
+            <button id="clear-btn">Clear</button>
+        </div>
+        <div id="resizer"></div>
+        <div id="right-panel"></div>
+    </div>
+
+    <script src="./modules/gsap.min.js"></script>
+    <script type="module" src="./3ddb.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('right-panel');
+            const visualizer = new DBSchemaVisualizer(container);
+            visualizer.setupClickHandler();
+
+            const schemaInput = document.getElementById('schema-input');
+            const sqlInput = document.getElementById('sql-input');
+            const visualizeBtn = document.getElementById('visualize-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            let currentTab = 'json';
+
+            // Tab switching logic
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentTab = btn.dataset.tab;
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    btn.classList.add('active');
+                    document.getElementById(`${currentTab}-tab`).classList.add('active');
+                    adjustTextareaHeight();
+                });
+            });
+
+            // Function to adjust textarea height dynamically
+            function adjustTextareaHeight() {
+                const leftPanel = document.getElementById('left-panel');
+                const panelHeight = window.innerHeight - leftPanel.offsetTop;
+                const activeTextarea = document.querySelector('.tab-content.active textarea');
+                activeTextarea.style.height = `${panelHeight - 200}px`; // Adjusted for tabs
+            }
+
+            // Adjust textarea height when the window is resized
+            window.addEventListener('resize', adjustTextareaHeight);
+
+            // Call adjustTextareaHeight when the page loads
+            adjustTextareaHeight();
+
+            // Define a default JSON schema
+            const defaultSchema = [
+                {
+                    "db_id": "flight_company",
+                    "tables": [
+                        {
+                            "name": "airport",
+                            "columns": [
+                                {
+                                    "name": "id",
+                                    "type": "INT",
+                                    "not_null": true,
+                                    "is_primary": true,
+                                    "index": 1
+                                },
+                                {
+                                    "name": "City",
+                                    "type": "VARCHAR(255)",
+                                    "not_null": true,
+                                    "is_primary": false,
+                                    "index": 2
+                                },
+                                {
+                                    "name": "Country",
+                                    "type": "VARCHAR(255)",
+                                    "not_null": true,
+                                    "is_primary": false,
+                                    "index": 3
+                                },
+                                {
+                                    "name": "IATA",
+                                    "type": "VARCHAR(255)",
+                                    "not_null": true,
+                                    "is_primary": false,
+                                    "index": 4
+                                },
+                                {
+                                    "name": "ICAO",
+                                    "type": "VARCHAR(255)",
+                                    "not_null": true,
+                                    "is_primary": false,
+                                    "index": 5
+                                },
+                                {
+                                    "name": "name",
+                                    "type": "VARCHAR(255)",
+                                    "not_null": true,
+                                    "is_primary": false,
+                                    "index": 6
+                                }
+                            ],
+                            "primary_keys": ["id"],
+                            "foreign_keys": []
+                        },
+                        {
+                            "name": "operate_company",
+                            "columns": [
+                                {
+                                    "name": "id",
+                                    "type": "INT",
+                                    "not_null": true,
+                                    "is_primary": true,
+                                    "index": 7
+                                },
+                                {
+                                    "name": "name",
+                                    "type": "VARCHAR(255)",
+                                    "not_null": true,
+                                    "is_primary": false,
+                                    "index": 8
+                                },
+                                {
+                                    "name": "Type",
+                                    "type": "VARCHAR(255)",
+                                    "not_null": true,
+                                    "is_primary": false,
+                                    "index": 9
+                                },
+                                {
+                                    "name": "Principal_activities",
+                                    "type": "VARCHAR(255)",
+                                    "is_primary": false,
+                                    "index": 10
+                                },
+                                {
+                                    "name": "Incorporated_in",
+                                    "type": "VARCHAR(255)",
+                                    "is_primary": false,
+                                    "index": 11
+                                },
+                                {
+                                    "name": "Group_Equity_Shareholding",
+                                    "type": "INT",
+                                    "is_primary": false,
+                                    "index": 12
+                                }
+                            ],
+                            "primary_keys": ["id"],
+                            "foreign_keys": []
+                        },
+                        {
+                            "name": "flight",
+                            "columns": [
+                                {
+                                    "name": "id",
+                                    "type": "INT",
+                                    "not_null": true,
+                                    "is_primary": true,
+                                    "index": 13
+                                },
+                                {
+                                    "name": "Vehicle_Flight_number",
+                                    "type": "VARCHAR(255)",
+                                    "not_null": true,
+                                    "is_primary": false,
+                                    "index": 14
+                                },
+                                {
+                                    "name": "Date",
+                                    "type": "VARCHAR(255)",
+                                    "not_null": true,
+                                    "is_primary": false,
+                                    "index": 15
+                                },
+                                {
+                                    "name": "Pilot",
+                                    "type": "VARCHAR(255)",
+                                    "not_null": false,
+                                    "is_primary": false,
+                                    "index": 16
+                                },
+                                {
+                                    "name": "Velocity",
+                                    "type": "INT",
+                                    "is_primary": false,
+                                    "index": 17
+                                },
+                                {
+                                    "name": "Altitude",
+                                    "type": "INT",
+                                    "is_primary": false,
+                                    "index": 18
+                                },
+                                {
+                                    "name": "airport_id",
+                                    "type": "INT",
+                                    "not_null": true,
+                                    "is_primary": false,
+                                    "index": 19
+                                },
+                                {
+                                    "name": "company_id",
+                                    "type": "INT",
+                                    "not_null": true,
+                                    "is_primary": false,
+                                    "index": 20
+                                }
+                            ],
+                            "primary_keys": ["id"],
+                            "foreign_keys": [
+                                {
+                                    "column": "company_id",
+                                    "ref_table": "operate_company",
+                                    "ref_column": "id"
+                                },
+                                {
+                                    "column": "airport_id",
+                                    "ref_table": "airport",
+                                    "ref_column": "id"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ];
+
+            // Initialize the schemaInput with the default JSON string
+            schemaInput.value = JSON.stringify(defaultSchema, null, 2);
+
+            const defaultSQL = 
+            '  CREATE TABLE airport (id INT NOT NULL, City VARCHAR(255) NOT NULL, Country VARCHAR(255) NOT NULL, IATA VARCHAR(255) NOT NULL, ' +
+            'ICAO VARCHAR(255) NOT NULL, name VARCHAR(255) NOT NULL, PRIMARY KEY (id));\n' +
+            '  CREATE TABLE operate_company (id INT NOT NULL, name VARCHAR(255) NOT NULL, Type VARCHAR(255), ' + 
+            'Principal_activities VARCHAR(255), Incorporated_in VARCHAR(255), Group_Equity_Shareholding INT, ' + 'PRIMARY KEY (id));\n' +
+            '  CREATE TABLE flight (id INT NOT NULL, Vehicle_Flight_number VARCHAR(255) NOT NULL, Date VARCHAR(255) NOT NULL, ' +
+            'Pilot VARCHAR(255), Velocity INT, Altitude INT, airport_id INT NOT NULL, company_id INT NOT NULL, PRIMARY KEY (id), ' +
+            'FOREIGN KEY (company_id) REFERENCES operate_company(id), FOREIGN KEY (airport_id) REFERENCES airport(id));';
+            sqlInput.value = defaultSQL;
+
+            // Call visualization when the page loads with the default schema
+            visualizer.visualizeSchema(defaultSchema[0]);
+
+            visualizeBtn.addEventListener('click', () => {
+                let inputValue, schema;
+                if (currentTab === 'json') {
+                    inputValue = schemaInput.value.trim();
+                    if (!inputValue.startsWith('[')) {
+                        inputValue = `[${inputValue}]`;
+                    }
+                    if (!inputValue.endsWith(']')) {
+                        inputValue = `${inputValue}]`;
+                    }
+                    schema = JSON.parse(inputValue)[0];
+                } else {
+                    inputValue = sqlInput.value.trim();
+                    schema = visualizer.convertSQLtoJSON(inputValue);
+                }
+                console.log("schema", schema);
+                visualizer.visualizeSchema(schema);
+            });
+
+            // Clear button logic
+            clearBtn.addEventListener('click', () => {
+                if (currentTab === 'json') {
+                    schemaInput.value = '';
+                } else {
+                    sqlInput.value = '';
+                }
+                visualizer.visualizeSchema({ tables: [] });
+            });
+
+            // Resizable panels
+            const leftPanel = document.getElementById('left-panel');
+            const rightPanel = document.getElementById('right-panel');
+            const resizer = document.getElementById('resizer');
+            let isResizing = false;
+            let startX;
+            let startWidth;
+
+            resizer.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                startX = e.clientX;
+                startWidth = parseInt(window.getComputedStyle(leftPanel).width, 10);
+                document.addEventListener('mousemove', resize);
+                document.addEventListener('mouseup', stopResize);
+            });
+
+            function resize(e) {
+                if (isResizing) {
+                    const diff = e.clientX - startX;
+                    const newWidth = startWidth + diff;
+                    const containerWidth = document.getElementById('container').offsetWidth;
+
+                    // Ensure the left panel doesn't get too small or too large
+                    if (newWidth > 100 && newWidth < containerWidth - 100) {
+                        leftPanel.style.width = `${newWidth}px`;
+                        rightPanel.style.width = `${containerWidth - newWidth - 5}px`; // 5px for resizer width
+                        visualizer.onWindowResize();
+                        adjustTextareaHeight(); // Adjust textarea height when resizing
+                    }
+                }
+            }
+
+            function stopResize() {
+                isResizing = false;
+                document.removeEventListener('mousemove', resize);
+                document.removeEventListener('mouseup', stopResize);
+            }
+        });
+    </script>
+</body>
+</html>
