@@ -2,9 +2,7 @@
 
 **DBVisualize-3D** is a 3D visualization tool for relational database schemas, serving as an intuitive interface for visualizing database tables and their relationships. Users can input schemas in JSON or SQL format, dynamically generating an interactive 3D representation of the database. This web-based tool was created using HTML, JavaScript, and the Three.js library
 
-<div align="center">
-   <img src="3ddbguiscreenshot.png" alt="DBVisualize-3D GUI" width="800"/>
-</div>
+![3ddbschemademo2](https://github.com/user-attachments/assets/6efe6819-722a-4883-814c-b6e3630f773c)
 
 ## Envisioning the Future: Innovations in 3D Database Management with Three.js
 
